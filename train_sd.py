@@ -306,7 +306,7 @@ def val(args, epoch, model, val_loader, optimizer, loss_fn, writer):
 
             # forward
             _, _, _, _, _, seg_pred, _, _, _, _ = model(image, target, 'val')                
-            dice = DiceLoss.dice_coeficient(seg_pred, target)
+            dice = DiceLoss.dice_coeficient(seg_pred.max(1)[1], target)
             dice_list.append(dice.item())
 
             # visualization 
@@ -319,7 +319,7 @@ def val(args, epoch, model, val_loader, optimizer, loss_fn, writer):
                 img = img.astype(np.uint8)
                 gt = make_grid(target, nrow=nrow, padding=padding).cpu().detach().numpy().transpose(1, 2, 0)[:, :, 0]
                 gt_img = label2rgb(gt, img, bg_label=0)
-                pre = torch.max(out, dim=1, keepdim=True)[1]
+                pre = torch.max(seg_pred, dim=1, keepdim=True)[1]
                 pre = pre.float()
                 pre = make_grid(pre, nrow=nrow, padding=padding).cpu().numpy().transpose(1, 2, 0)[:, :, 0]
                 pre_img = label2rgb(pre, img, bg_label=0)
