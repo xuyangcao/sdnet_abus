@@ -154,7 +154,7 @@ class SDNet(nn.Module):
         self.num_classes = num_classes
         self.num_mask_channels = num_mask_channels
 
-        self.m_encoder = MEncoder(self.z_length)
+        self.m_encoder = MEncoder(self.z_length) # modality encorder
         self.a_encoder = AEncoder(self.h, self.w, self.ndf, self.anatomy_out_channels, self.norm, self.upsample)
         self.segmentor = Segmentor(self.anatomy_out_channels, self.num_classes)
         self.decoder = Decoder(self.anatomy_out_channels, self.z_length, self.num_mask_channels)

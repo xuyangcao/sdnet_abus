@@ -1,5 +1,4 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = '1' 
 import cv2
 import sys
 import tqdm
@@ -35,7 +34,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # general config
-    parser.add_argument('--gpu', default='0', type=str)
+    parser.add_argument('--gpu', default='2', type=str)
     parser.add_argument('--ngpu', default=1, type=str)
     parser.add_argument('--seed', default=6, type=int)
     parser.add_argument('--n_epochs', type=int, default=60)
@@ -78,6 +77,7 @@ def main():
     # init args #
     #############
     args = get_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu 
 
     # creat save path
     if os.path.exists(args.save):
@@ -99,7 +99,7 @@ def main():
     writer = SummaryWriter(log_dir)
 
     # set title of the current process
-    setproctitle.setproctitle('...')
+    setproctitle.setproctitle(args.save)
 
     # random
     cudnn.benchmark = False
@@ -289,9 +289,9 @@ def train(args, epoch, model, train_loader, optimizer, loss_fn, writer):
                 fig.clear()
 
     writer.add_scalar('reco_loss', float(np.mean(reco_loss_list)), epoch)
-    writer.add_scalar('kl_loss', float(np.mean(kl_loss)), epoch)
-    writer.add_scalar('dice_loss', float(np.mean(dice_loss)), epoch)
-    writer.add_scalar('regression_loss', float(np.mean(regression_loss)), epoch)
+    writer.add_scalar('kl_loss', float(np.mean(kl_loss_list)), epoch)
+    writer.add_scalar('dice_loss', float(np.mean(dice_loss_list)), epoch)
+    writer.add_scalar('regression_loss', float(np.mean(regression_loss_list)), epoch)
     writer.add_scalar('total_loss',float(np.mean(loss_list)), epoch)
 
 
