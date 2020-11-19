@@ -166,8 +166,8 @@ class ElasticTransform(object):
             p.resize(probability=1, width=self._shape[0], height=self._shape[1])
             sample_aug = p.sample(1)
 
-            #sample['image'] = grey2rgb(sample_aug[0][0])
-            sample['image'] = sample_aug[0][0]
+            sample['image'] = grey2rgb(sample_aug[0][0])
+            #sample['image'] = sample_aug[0][0]
             sample['target'] = sample_aug[0][1]
             return sample
         else:
@@ -197,9 +197,9 @@ class ToTensor(object):
         if self._mode == 'train' or self._mode == 'test' or self._mode == 'val':
             image, target = sample['image'], sample['target']
             target = np.expand_dims(target, 0)
-            image = np.expand_dims(image, 0)
+            #image = np.expand_dims(image, 0)
             #print('image.shape: ', image.shape)
-            #image = image.transpose((2, 0, 1))
+            image = image.transpose((2, 0, 1))
             image = torch.from_numpy(image)
 
             # transverse tensor to 0~1 

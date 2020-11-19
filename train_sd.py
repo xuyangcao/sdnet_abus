@@ -34,7 +34,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # general config
-    parser.add_argument('--gpu', default='2', type=str)
+    parser.add_argument('--gpu', default='1', type=str)
     parser.add_argument('--ngpu', default=1, type=str)
     parser.add_argument('--seed', default=6, type=int)
     parser.add_argument('--n_epochs', type=int, default=60)
@@ -43,7 +43,7 @@ def get_args():
     # dataset config
     parser.add_argument('--root_path', default='/data/xuyangcao/code/data/abus_2d/', type=str)
     parser.add_argument('--sample_k', '-k', default=8856, type=int, choices=(100, 300, 885, 1770, 4428, 8856)) # 8856 if supervised
-    parser.add_argument('--batch_size', type=int, default=1)
+    parser.add_argument('--batch_size', type=int, default=4)
 
     # optimizer config
     parser.add_argument('--lr', default=1e-4, type=float) 
@@ -52,6 +52,8 @@ def get_args():
     # network config
     parser.add_argument('--arch', default='sdnet', type=str, choices=('dense161', 'dense121', 'dense201', 'unet', 'resunet', 'sdnet'))
     parser.add_argument('--drop_rate', default=0.3, type=float)
+    parser.add_argument('--in_channels', default=3, type=int)
+    parser.add_argument('--num_classes', default=2, type=int)
 
     # decomposition config 
     parser.add_argument('--anatomy_factors', type=int, default=4)
@@ -114,18 +116,14 @@ def main():
     #####################
     logging.info('--- building network ---')
     
-    model_params = {
-            'width': 256,
-            'height': 256,
-            'ndf': 64,
-            'norm': 'batchnorm',
-            'upsample': 'nearest',
-            'num_classes': 2,
-            'anatomy_out_channels': args.anatomy_factors,
-            'z_length': args.modality_factors,
-            'num_mask_channels': 4,
-            }
     if args.arch == 'sdnet':
+        model_params = {
+                'in_channels': args.in_channels,
+                'num_classes': args.num_classes,
+                'anatomy_out_channels': args.anatomy_factors,
+                'z_length': args.modality_factors,
+                'num_mask_channels': 4,
+                }
         model = SDNet(**model_params)
     else:
         raise(NotImplementedError('model {} not implement'.format(args.arch))) 
@@ -326,12 +324,12 @@ def val(args, epoch, model, val_loader, optimizer, loss_fn, writer):
                 fig = plt.figure()
                 ax = fig.add_subplot(211)
                 ax.imshow(gt_img)
-                ax.set_title('train ground truth')
+                ax.set_title('val ground truth')
                 ax = fig.add_subplot(212)
                 ax.imshow(pre_img)
-                ax.set_title('train prediction')
+                ax.set_title('val prediction')
                 fig.tight_layout() 
-                writer.add_figure('train_result', fig, epoch)
+                writer.add_figure('val_result', fig, epoch)
                 fig.clear()
 
         writer.add_scalar('val_dice', float(np.mean(dice_list)), epoch)

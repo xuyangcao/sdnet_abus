@@ -7,6 +7,8 @@ import time
 from layers.blocks import *
 from layers.adain import *
 from models.d2unet import D2UNet
+from models.resunet import UNet
+from models.denseunet import DenseUnet
 
 class AdaINDecoder(nn.Module):
     def __init__(self, anatomy_out_channels):
@@ -64,21 +66,16 @@ class Segmentor(nn.Module):
 
 
 class AEncoder(nn.Module):
-    def __init__(self, width, height, ndf, num_output_channels, norm, upsample):
+    def __init__(self, num_output_channels):
         super(AEncoder, self).__init__()
         """
         UNet encoder for the anatomy factors of the image
         num_output_channels: number of spatial (anatomy) factors to encode
         """
-        self.width = width 
-        self.height = height
-        self.ndf = ndf
         self.num_output_channels = num_output_channels
-        self.norm = norm
-        self.upsample = upsample
 
-        #self.unet = UNet(self.width, self.height, self.ndf, self.num_output_channels, self.norm, self.upsample)
-        self.unet = D2UNet(in_channels=1, num_classes=self.num_output_channels, drop_rate=0.1, skip_connetcion=True)
+        #self.unet = D2UNet(in_channels=1, num_classes=self.num_output_channels, drop_rate=0.1, skip_connetcion=True)
+        self.unet = DenseUnet(arch='161', pretrained=True, num_classes=self.num_output_channels)
 
     def forward(self, x):
         out = self.unet(x)
@@ -115,7 +112,7 @@ class MEncoder(nn.Module):
         return self.mu(x), self.logvar(x)
 
     def forward(self, a, x):
-        out = torch.cat([a, x], 1)
+        out = torch.cat([a, x[:, 0:1, ...]], 1)
         out = self.block1(out)
         out = self.block2(out)
         out = self.block3(out)
@@ -131,31 +128,21 @@ class MEncoder(nn.Module):
 
 
 class SDNet(nn.Module):
-    def __init__(self, width, height, num_classes, ndf, z_length, norm, upsample, anatomy_out_channels, num_mask_channels, **kwargs):
+    def __init__(self, in_channels, num_classes, z_length, anatomy_out_channels, num_mask_channels, **kwargs):
         super(SDNet, self).__init__()
         """
         Args:
-            width: input width
-            height: input height
-            upsample: upsampling type (nearest | bilateral)
             num_classes: number of semantice segmentation classes
             z_length: number of modality factors
             anatomy_out_channels: number of anatomy factors
-            norm: feature normalization method (BatchNorm)
-            ndf: number of feature channels
         """
-        self.h = height
-        self.w = width
-        self.ndf = ndf
         self.z_length = z_length
         self.anatomy_out_channels = anatomy_out_channels
-        self.norm = norm
-        self.upsample = upsample
         self.num_classes = num_classes
         self.num_mask_channels = num_mask_channels
 
         self.m_encoder = MEncoder(self.z_length) # modality encorder
-        self.a_encoder = AEncoder(self.h, self.w, self.ndf, self.anatomy_out_channels, self.norm, self.upsample)
+        self.a_encoder = AEncoder(self.anatomy_out_channels)
         self.segmentor = Segmentor(self.anatomy_out_channels, self.num_classes)
         self.decoder = Decoder(self.anatomy_out_channels, self.z_length, self.num_mask_channels)
 
